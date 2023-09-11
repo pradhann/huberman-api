@@ -73,12 +73,12 @@ def chat_with_openai(question, history=""):
         messages=[
             {
                 "role": "system",
-                "content": "You are a health bot that answers based on the context. If you don't know the answer, you can say 'I don't know'. ",
+                "content": "You are a health bot that answers only based on the context. If you don't know the answer, you can say 'I don't know'. ",
             },
             {"role": "user", "content": prompt},
             {
                 "role": "user",
-                "content": "Be detailed and clear in your explanation. Cite sourcers to back your answer. Use bullet points to make your answer easier to read.",
+                "content": "Be detailed and clear in your explanation. Use bullet points to make your answer easier to read.",
             },
         ],
     )
