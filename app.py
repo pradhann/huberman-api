@@ -5,10 +5,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 import openai
 import numpy as np
 import faiss
+import os
 import re
 
 # Load the OpenAI API key
-openai.api_key = "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"
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 # Create the database engine
 engine = create_engine("sqlite:///data/processed/embeddings.db")
@@ -68,7 +69,7 @@ def chat_with_openai(question, history=""):
             {context}
         """
     completion = openai.ChatCompletion.create(
-        model="gpt-4",
+        model="gpt-3.5-turbo",
         messages=[
             {
                 "role": "system",
@@ -83,9 +84,10 @@ def chat_with_openai(question, history=""):
     )
     return completion.choices[0].message.content
 
-def convert_to_link(url):
 
-    return re.sub(r'(t=\d+)\.\d+', r'\1', url)
+def convert_to_link(url):
+    return re.sub(r"(t=\d+)\.\d+", r"\1", url)
+
 
 def chat_function(message, history):
     answer = chat_with_openai(message, history)
@@ -99,7 +101,7 @@ def chat_function(message, history):
         ]
     ]
 
-    context_df['youtube_url'] = context_df["youtube_url"].apply(convert_to_link)
+    context_df["youtube_url"] = context_df["youtube_url"].apply(convert_to_link)
 
     df_html = context_df.to_html(classes="table table-striped")
 
