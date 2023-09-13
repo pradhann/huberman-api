@@ -116,7 +116,7 @@ def chat_function(message, history):
 # Add a description at the top of the interface
 description = """
 <div>
-    <h2>🌟 Welcome to Huberman's Oracle!</h2>
+    <h2>🌟 Welcome to Huberman's Oracle! </h2>
     <p>🎧 <strong>Rooted in Huberman Podcasts:</strong> We are huge admirers of Andrew Huberman. To make the knowledge more accessible, Huberman's Oracle is crafted to answer your inquiries using data from indexed episodes of Huberman Podcasts. Just type your question and chat with Huberman! </p>
     <p>🔍 <strong> Retrieval Augmentation Generation:</strong> To complement the GPT model, we employ FAISS indexing technology for quick and precise similarity searches in high-dimensional spaces. This technology allows us to highlight the most pertinent episodes from Huberman Podcasts that relate to your questions.</p>
     <p>🔗 <strong>Easy References:</strong> For every answer we generate, we offer direct links to the relevant sections of Huberman Podcasts, complete with timestamps for easy reference.</p>
@@ -126,7 +126,6 @@ description = """
     <a href="https://github.com/pradhann">@pradhann</a> 
     </p>
     <p>💌 <strong>Want to Learn More or Chat?</strong> Feel free to <a href="https://www.linkedin.com/in/nripesh-pradhan-bb0b15132">send us a message</a>. We're always excited to connect with curious minds!</p>
-</div>
 </div>
 """
 
