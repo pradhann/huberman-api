@@ -116,8 +116,8 @@ def chat_function(message, history):
 # Add a description at the top of the interface
 description = """
 <div>
-    <h1>🌟 Welcome to Huberman's Oracle! </h2>
-    <p>🎧 <strong> Huberman Podcasts:</strong> We are huge admirers of Andrew Huberman. To make the knowledge more accessible, Huberman's Oracle is crafted to answer your inquiries using data from indexed episodes of Huberman Podcasts. Just type your question and chat with Huberman! </p>
+    <h2>🌟 Welcome to Huberman's Oracle! </h2>
+    <p>🎧 <strong>What is this?:</strong> We are huge admirers of Andrew Huberman. To make the knowledge more accessible, Huberman's Oracle is crafted to answer your inquiries using data from indexed episodes of Huberman Podcasts. Just type your question and chat with Huberman! </p>
     <p>🔍 <strong> Retrieval Augmentation Generation:</strong> To complement the GPT model, we employ FAISS indexing technology for quick and precise similarity searches in high-dimensional spaces. This technology allows us to highlight the most pertinent episodes from Huberman Podcasts that relate to your questions.</p>
     <p>🔗 <strong>Easy References:</strong> For every answer we generate, we offer direct links to the relevant sections of Huberman Podcasts, complete with timestamps for easy reference.</p>
     <p>💖 <strong>Crafted with Love & Passion:</strong> This initiative serves as an tribute to Dr. Andrew Huberman's transformative work. We hope it empowers individuals on their quest for knowledge and self-betterment.</p>
