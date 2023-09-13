@@ -7,6 +7,7 @@ import numpy as np
 import faiss
 import os
 import re
+import backoff
 
 # Load the OpenAI API key
 openai.api_key = os.environ.get("OPENAI_API_KEY")
@@ -41,6 +42,7 @@ def get_context_to_question(question):
     return context_df
 
 
+@backoff.on_exception(backoff.expo, openai.error.RateLimitError, max_tries=6)
 def chat_with_openai(question, history=""):
     context_df = get_context_to_question(question)
     context = "\n".join(context_df["text"])
@@ -110,5 +112,48 @@ def chat_function(message, history):
     return combined_response
 
 
-chat_interface = gr.ChatInterface(fn=chat_function, title="Huberman's Oracle")
+# Add a description at the top of the interface
+description = """
+<div>
+    <h2>🌟 Welcome to Huberman's Oracle!</h2>
+    <p>🎧 <strong>Rooted in Huberman Podcasts:</strong> As huge admirers of Dr. Andrew Huberman, we found his podcasts to be invaluable reservoirs of wisdom. Compelled to make this wealth of knowledge effortlessly accessible, Huberman's Oracle is crafted to answer your inquiries using data from indexed episodes of Huberman Podcasts.</p>
+    <p>🔍 <strong> Retrieval Augmentation Generation:</strong> To complement the GPT model, we employ FAISS indexing technology for quick and precise similarity searches in high-dimensional spaces. This technology allows us to highlight the most pertinent episodes from Huberman Podcasts that relate to your questions.</p>
+    <p>🔗 <strong>Easy References:</strong> For every answer we generate, we offer direct links to the pertinent sections of Huberman Podcasts, complete with timestamps for easy reference.</p>
+    <p>💖 <strong>Crafted with Love & Passion:</strong> This initiative serves as an homage to Dr. Andrew Huberman's transformative work. We hope it empowers individuals on their quest for knowledge and self-betterment.</p>
+    <p>👩‍💻 <strong>Developed by:</strong> 
+    <a href="https://github.com/shitoshparajuli">@shitoshp</a>   
+    <a href="https://github.com/pradhann">@pradhann</a> 
+    </p>
+</div>
+"""
+
+
+# Add example inputs and outputs
+examples = [
+    ["What is shingles - is it dangerous?", "Shingles can be dangerous..."],
+    [
+        "What is the importance of morning sunlight?",
+        "Morning sunlight plays a vital role in setting our circadian rhythms, which govern functions like sleep, hormone release, and digestion. Experts recommend exposing your eyes to morning sunlight to help regulate these rhythms. [Source: Dr-Emily-Balcetis-Tools-for-Setting-Achieving-Goals.csv, Timestamp: 12:34]",
+    ],
+    [
+        "How can I improve my focus?",
+        "Improving focus can be achieved by manipulating your lighting conditions; a well-lit room can enhance focus and productivity. Elevating your screen above eye level can also induce a state of alertness. [Source: Optimizing-Workspace-for-Productivity-Focus-Creativity.csv, Timestamp: 24:56]",
+    ],
+    [
+        "What are the benefits of deep breathing?",
+        "Deep breathing can activate the parasympathetic nervous system, which helps to reduce stress and promote relaxation. It can also improve cognitive function and emotional regulation. [Source: Breathwork-for-Reducing-Stress.csv, Timestamp: 19:20]",
+    ],
+    [
+        "How does exercise impact mental health?",
+        "Regular exercise has been shown to improve mental well-being by releasing endorphins, which act as natural mood lifters. It can also help in reducing anxiety and depressive symptoms. [Source: Physical-Activity-and-Mental-Health.csv, Timestamp: 08:47]",
+    ],
+]
+
+# Update the chat interface
+chat_interface = gr.ChatInterface(
+    fn=chat_function,
+    title="Huberman's Oracle",
+    description=description,
+    examples=examples,
+)
 chat_interface.launch()
