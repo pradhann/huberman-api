@@ -96,10 +96,14 @@ def chat_function(message, history):
 
     context_df = get_context_to_question(message)
     context_df["episode_title"] = context_df["sanitized_title"]
+    # Remove newline characters in the 'text' column
+    context_df["relevant_snippet"] = context_df["text"].apply(
+        lambda x: re.sub("\n", " ", x)
+    )
     context_df = context_df[
         [
             "episode_title",
-            "text",
+            "relevant_snippet",
             "youtube_url",
         ]
     ]
