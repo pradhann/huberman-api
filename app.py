@@ -131,6 +131,9 @@ description = """
     <a href="https://github.com/pradhann">@pradhann</a> 
     </p>
     <p>💌 <strong>Want to Learn More or Chat?</strong> Feel free to <a href="https://www.linkedin.com/in/nripesh-pradhan-bb0b15132">send us a message</a>. We're always excited to connect with curious minds!</p>
+    <p>🌱 <strong>Plug:</strong> Take a look at 
+<a href="https://ask-ltt-wan.vercel.app/" target="_blank" rel="noopener noreferrer">ask-llt-wan</a>, an application that by indexes podcasts from the WAN Show.</p>
+
 </div>
 """
 
