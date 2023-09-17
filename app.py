@@ -53,12 +53,14 @@ def chat_with_openai(question, history=""):
     word_count = sum(len(message.split()) for message in history_summary)
 
     # Check if adding the latest message will exceed the word limit
-    if word_count + len(question.split()) <= 1000:
+    if word_count + len(question.split()) <=1000:
         history_summary.append(question)
 
+    
+    history_summary = [s[:1000] if len(s) > 1000 else s for s in history_summary]
     # Truncate history_summary to contain at most 1000 words
-    if len(history_summary) > 1000:
-        history_summary = history_summary[-1000:]
+    if len(history_summary) > 5:
+        history_summary = history_summary[-5:]
 
     # Reverse the history_summary list to get the latest conversation last
     history_summary.reverse()
@@ -75,7 +77,12 @@ def chat_with_openai(question, history=""):
         messages=[
             {
                 "role": "system",
-                "content": "You are a health bot that answers only based on the context. If you don't know the answer, you can say 'I don't know'. ",
+                "content": '''
+                You are a health bot that answers only based on the context. If you don't know the answer, you can say 'I don't know'.
+                Previous conversation history is provided to you which is a summary of a conversation with you earlier 
+                that provides some historic background into why the question was asked.
+                '''
+                ,
             },
             {"role": "user", "content": prompt},
             {
@@ -95,7 +102,7 @@ def chat_function(message, history):
     answer = chat_with_openai(message, history)
 
     context_df = get_context_to_question(message)
-    context_df["episode_title"] = context_df["sanitized_title"]
+    context_df.rename(columns={"sanitized_title": "episode_title"}, inplace=True)
     # Remove newline characters in the 'text' column
     context_df["relevant_snippet"] = context_df["text"].apply(
         lambda x: re.sub("\n", " ", x)
