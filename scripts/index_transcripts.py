@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Set OpenAI API key
-openai.api_key = "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"
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 # Define the embedding type
 embedding_type = np.dtype(
