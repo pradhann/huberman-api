@@ -1,3 +1,4 @@
+from flask import Flask, request, jsonify
 import gradio as gr
 import pandas as pd
 from sqlalchemy import create_engine
@@ -53,10 +54,9 @@ def chat_with_openai(question, history=""):
     word_count = sum(len(message.split()) for message in history_summary)
 
     # Check if adding the latest message will exceed the word limit
-    if word_count + len(question.split()) <=1000:
+    if word_count + len(question.split()) <= 1000:
         history_summary.append(question)
 
-    
     history_summary = [s[:1000] if len(s) > 1000 else s for s in history_summary]
     # Truncate history_summary to contain at most 1000 words
     if len(history_summary) > 5:
@@ -77,12 +77,11 @@ def chat_with_openai(question, history=""):
         messages=[
             {
                 "role": "system",
-                "content": '''
+                "content": """
                 You are a health bot that answers only based on the context. If you don't know the answer, you can say 'I don't know'.
                 Previous conversation history is provided to you which is a summary of a conversation with you earlier 
                 that provides some historic background into why the question was asked.
-                '''
-                ,
+                """,
             },
             {"role": "user", "content": prompt},
             {
@@ -166,11 +165,30 @@ examples = [
     ],
 ]
 
-# Update the chat interface
-chat_interface = gr.ChatInterface(
-    fn=chat_function,
-    title="Huberman's Oracle",
-    description=description,
-    examples=examples,
-)
-chat_interface.launch()
+# # Update the chat interface
+# chat_interface = gr.ChatInterface(
+#     fn=chat_function,
+#     title="Huberman's Oracle",
+#     description=description,
+#     examples=examples,
+# )
+# chat_interface.launch()
+
+
+app = Flask(__name__)
+
+
+@app.route("/query", methods=["POST"])
+def query():
+    try:
+        data = request.json
+        message = data["message"]
+        history = data.get("history", [])
+        response = chat_function(message, history)
+        return jsonify({"answer": response})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
