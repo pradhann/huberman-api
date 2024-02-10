@@ -1,194 +1,96 @@
 from flask import Flask, request, jsonify
-import gradio as gr
-import pandas as pd
-from sqlalchemy import create_engine
-from sklearn.metrics.pairwise import cosine_similarity
-import openai
-import numpy as np
-import faiss
-import os
-import re
-import backoff
+import engine
 
-# Load the OpenAI API key
-openai.api_key = os.environ.get("OPENAI_API_KEY")
-
-# Create the database engine
-engine = create_engine("sqlite:///data/processed/embeddings.db")
-
-# Load the DataFrame from the "docs" table
-df = pd.read_sql_table("docs", engine)
-
-# Load the saved faiss index
-index = faiss.read_index("data/processed/faiss_index.index")
-
-
-def get_embeddings(line):
-    return openai.Embedding.create(input=[line], model="text-embedding-ada-002")[
-        "data"
-    ][0]["embedding"]
-
-
-def get_context_to_question(question):
-    query_embedding = get_embeddings(question)  # reshape the vector
-    query_embedding = np.array(query_embedding).astype("float32")
-    # Normalize the vector before querying faiss index
-    query_embedding = query_embedding.reshape(1, -1)  # reshape the vector
-    faiss.normalize_L2(query_embedding)
-    # Query the faiss index
-    k = 5
-    distances, indices = index.search(query_embedding, k)
-    # Collect and return the results
-    context_df = df.iloc[indices.flatten()]
-    return context_df
-
-
-@backoff.on_exception(backoff.expo, openai.error.RateLimitError, max_tries=6)
-def chat_with_openai(question, history=""):
-    context_df = get_context_to_question(question)
-    context = "\n".join(context_df["text"])
-    history_summary = [conversation[1] for conversation in history]
-    history_summary.reverse()  # Reverse the list to get the latest conversation first
-
-    # Calculate the total number of words in history_string
-    word_count = sum(len(message.split()) for message in history_summary)
-
-    # Check if adding the latest message will exceed the word limit
-    if word_count + len(question.split()) <= 1000:
-        history_summary.append(question)
-
-    history_summary = [s[:1000] if len(s) > 1000 else s for s in history_summary]
-    # Truncate history_summary to contain at most 1000 words
-    if len(history_summary) > 5:
-        history_summary = history_summary[-5:]
-
-    # Reverse the history_summary list to get the latest conversation last
-    history_summary.reverse()
-
-    history_string = "\n".join(history_summary)
-    prompt = f"""
-            Previous Conversation: {history_string}
-            Question: {question}
-            Context:
-            {context}
-        """
-    completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {
-                "role": "system",
-                "content": """
-                You are a health bot that answers only based on the context. If you don't know the answer, you can say 'I don't know'.
-                Previous conversation history is provided to you which is a summary of a conversation with you earlier 
-                that provides some historic background into why the question was asked.
-                """,
-            },
-            {"role": "user", "content": prompt},
-            {
-                "role": "user",
-                "content": "Be detailed and clear in your explanation.",
-            },
-        ],
-    )
-    return completion.choices[0].message.content
-
-
-def convert_to_link(url):
-    return re.sub(r"(t=\d+)\.\d+", r"\1", url)
-
-
-def chat_function(message, history):
-    answer = chat_with_openai(message, history)
-
-    context_df = get_context_to_question(message)
-    context_df.rename(columns={"sanitized_title": "episode_title"}, inplace=True)
-    # Remove newline characters in the 'text' column
-    context_df["relevant_snippet"] = context_df["text"].apply(
-        lambda x: re.sub("\n", " ", x)
-    )
-    context_df = context_df[
-        [
-            "episode_title",
-            "relevant_snippet",
-            "youtube_url",
-        ]
-    ]
-
-    context_df["youtube_url"] = context_df["youtube_url"].apply(convert_to_link)
-
-    df_html = context_df.to_html(index=False)
-
-    combined_response = f"{answer}<br><br><b>Sources:<b><br><p>{df_html}</p>"
-
-    return combined_response
-
-
-# Add a description at the top of the interface
-description = """
-<div>
-    <p> Welcome to Huberman's Oracle! </p>
-    <h2>🌟 Welcome to Huberman's Oracle!</h2>
-    <p>🎧 <strong>What is this?:</strong> We are huge admirers of Andrew Huberman. To make the knowledge more accessible, Huberman's Oracle is crafted to answer your inquiries using data from indexed episodes of Huberman Podcasts. Just type your question and chat with Huberman! </p>
-    <p>🔍 <strong> Retrieval Augmentation Generation:</strong> To complement the GPT model, we employ FAISS indexing technology for quick and precise similarity searches in high-dimensional spaces. This technology allows us to highlight the most pertinent episodes from Huberman Podcasts that relate to your questions.</p>
-    <p>🔗 <strong>Easy References:</strong> For every answer we generate, we offer direct links to the relevant sections of Huberman Podcasts, complete with timestamps for easy reference.</p>
-    <p>💖 <strong>Crafted with Love & Passion:</strong> This initiative serves as an tribute to Dr. Andrew Huberman's transformative work. We hope it empowers individuals on their quest for knowledge and self-betterment.</p>
-    <p>👩‍💻 <strong>Developed by:</strong> 
-    <a href="https://github.com/shitoshparajuli">@shitoshp</a>   
-    <a href="https://github.com/pradhann">@pradhann</a> 
-    </p>
-    <p>💌 <strong>Want to Learn More or Chat?</strong> Feel free to <a href="https://www.linkedin.com/in/nripesh-pradhan-bb0b15132">send us a message</a>. We're always excited to connect with curious minds!</p>
-    <p>🌱 <strong>Plug:</strong> Take a look at 
-<a href="https://ask-ltt-wan.vercel.app/" target="_blank" rel="noopener noreferrer">ask-llt-wan</a>, an application that by indexes podcasts from the WAN Show.</p>
-
-</div>
-"""
-
-
-# Add example inputs and outputs
-examples = [
-    ["What is shingles - is it dangerous?", "Shingles can be dangerous..."],
-    [
-        "What is the importance of morning sunlight?",
-        "Morning sunlight plays a vital role in setting our circadian rhythms, which govern functions like sleep, hormone release, and digestion. Experts recommend exposing your eyes to morning sunlight to help regulate these rhythms. [Source: Dr-Emily-Balcetis-Tools-for-Setting-Achieving-Goals.csv, Timestamp: 12:34]",
-    ],
-    [
-        "How can I improve my focus?",
-        "Improving focus can be achieved by manipulating your lighting conditions; a well-lit room can enhance focus and productivity. Elevating your screen above eye level can also induce a state of alertness. [Source: Optimizing-Workspace-for-Productivity-Focus-Creativity.csv, Timestamp: 24:56]",
-    ],
-    [
-        "What are the benefits of deep breathing?",
-        "Deep breathing can activate the parasympathetic nervous system, which helps to reduce stress and promote relaxation. It can also improve cognitive function and emotional regulation. [Source: Breathwork-for-Reducing-Stress.csv, Timestamp: 19:20]",
-    ],
-    [
-        "How does exercise impact mental health?",
-        "Regular exercise has been shown to improve mental well-being by releasing endorphins, which act as natural mood lifters. It can also help in reducing anxiety and depressive symptoms. [Source: Physical-Activity-and-Mental-Health.csv, Timestamp: 08:47]",
-    ],
-]
-
-# # Update the chat interface
-# chat_interface = gr.ChatInterface(
-#     fn=chat_function,
-#     title="Huberman's Oracle",
-#     description=description,
-#     examples=examples,
-# )
-# chat_interface.launch()
-
+from errors import RequestValidationError, OpenAIError
 
 app = Flask(__name__)
 
 
-@app.route("/query", methods=["POST"])
-def query():
+def validate_huberman_request(data):
+    """
+    Validates the request payload for the /ask_huberman endpoint.
+
+    Parameters:
+    - data (dict): The JSON payload of the request.
+
+    Raises:
+    - RequestValidationError: If the validation checks fail.
+    """
+    if not data or "message" not in data:
+        raise RequestValidationError("Request must contain a 'message' field.")
+    if not isinstance(data["message"], str):
+        raise RequestValidationError("The 'message' field must be a string.")
+    if "history" not in data:
+        raise RequestValidationError("Request must contain a 'history' field.")
+    if not isinstance(data["history"], list):
+        raise RequestValidationError("The 'history' field must be a list.")
+
+
+@app.errorhandler(404)
+def not_found_error(error):
+    """Handles 404 Not Found errors."""
+    return jsonify({"error": "Resource not found"}), 404
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handles 500 Internal Server Error."""
+    return jsonify({"error": "Internal server error"}), 500
+
+
+@app.errorhandler(OpenAIError)
+def handle_openai_error(error):
+    """Handles errors specifically thrown by OpenAI API interactions."""
+    return jsonify({"meta": {}, "errors": {"message": str(error)}}), 500
+
+
+@app.errorhandler(RequestValidationError)
+def handle_request_validation_error(error):
+    """Handles request validation errors for the API."""
+    return jsonify({"meta": {}, "errors": {"message": error.message}}), 400
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(error):
+    """Handles any unexpected errors that occur within the application."""
+    return (
+        jsonify({"meta": {}, "errors": {"message": "An unexpected error occurred."}}),
+        500,
+    )
+
+
+@app.route("/health_check", methods=["GET"])
+def health_check():
+    """
+    A health check endpoint to verify the application and OpenAI API are operational.
+
+    Returns:
+    - A JSON response indicating the health status.
+    """
     try:
-        data = request.json
-        message = data["message"]
-        history = data.get("history", [])
-        response = chat_function(message, history)
-        return jsonify({"answer": response})
+        engine.openai_health_check()
+        return jsonify({"meta": {"ok": True}}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"meta": {"ok": False}}), 500
+
+
+@app.route("/ask_huberman", methods=["POST"])
+def ask_huberman():
+    """
+    The main endpoint to process questions and return responses based on Huberman's podcast content.
+
+    Returns:
+    - A JSON response containing the OpenAI response and related context responses.
+    """
+    data = request.json
+    validate_huberman_request(data)
+
+    message = data["message"]
+    history = data["history"]
+    response_data = engine.get_humberman_response(message, history)
+
+    return jsonify({"meta": {}, "data": response_data}), 200
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=True)
