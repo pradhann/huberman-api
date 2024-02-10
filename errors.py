@@ -35,9 +35,9 @@ class ProcessingError(Exception):
     - message (str): Explanation of the error.
     """
 
-    def __init__(self, message="Error processing request"):
-        self.message = message
-        super().__init__(self.message)
+    def __init__(self, message="A processing error occurred", error_type=None):
+        super().__init__(message)
+        self.error_type = error_type
 
 
 class OpenAIError(Exception):
@@ -48,6 +48,8 @@ class OpenAIError(Exception):
     - message (str): Explanation of the error.
     """
 
-    def __init__(self, message="Error occurred while making the request to OpenAI"):
-        self.message = message
-        super().__init__(self.message)
+    def __init__(
+        self, message="Error occurred while making the request to OpenAI", error_type=""
+    ):
+        super().__init__(message)
+        self.error_type = error_type

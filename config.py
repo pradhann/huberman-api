@@ -4,9 +4,13 @@ import os
 class Config(object):
     """Base configuration."""
 
-    SECRET_KEY = os.environ.get("SECRET_KEY", "your_secret_key")
-    DATABASE_URI = os.environ.get("DATABASE_URI", "sqlite:///yourdatabase.db")
+    DATABASE_URI = os.environ.get(
+        "DATABASE_URI", "sqlite:///data/processed/embeddings.db"
+    )
     OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "your_openai_api_key")
+    FAISS_INDEX_PATH = os.environ.get(
+        "FAISS_INDEX_PATH", "data/processed/faiss_index.index"
+    )
 
 
 class DevelopmentConfig(Config):

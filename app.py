@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import engine
 
-from errors import RequestValidationError, OpenAIError
+from errors import RequestValidationError, OpenAIError, ProcessingError
 
 app = Flask(__name__)
 
@@ -38,6 +38,13 @@ def internal_error(error):
     return jsonify({"error": "Internal server error"}), 500
 
 
+@app.errorhandler(ProcessingError)
+def handle_processing_error(error):
+    response = jsonify({"error": str(error)})
+    response.status_code = 500
+    return response
+
+
 @app.errorhandler(OpenAIError)
 def handle_openai_error(error):
     """Handles errors specifically thrown by OpenAI API interactions."""
@@ -50,13 +57,9 @@ def handle_request_validation_error(error):
     return jsonify({"meta": {}, "errors": {"message": error.message}}), 400
 
 
-@app.errorhandler(Exception)
-def handle_unexpected_error(error):
-    """Handles any unexpected errors that occur within the application."""
-    return (
-        jsonify({"meta": {}, "errors": {"message": "An unexpected error occurred."}}),
-        500,
-    )
+@app.route("/test_error")
+def test_error():
+    raise ProcessingError("This is a test processing error.")
 
 
 @app.route("/health_check", methods=["GET"])
@@ -86,6 +89,7 @@ def ask_huberman():
     validate_huberman_request(data)
 
     message = data["message"]
+    print("message: ", message)
     history = data["history"]
     response_data = engine.get_humberman_response(message, history)
 

@@ -17,6 +17,7 @@ Dependencies:
 
 from flask import current_app
 
+
 from config import Config
 import pandas as pd
 from sqlalchemy import create_engine
@@ -102,7 +103,7 @@ def format_context_response(context_df):
     """
     return [
         {
-            "episode_title": row["episode_title"],
+            "episode_title": row["sanitized_title"],
             "relevant_snippet": re.sub("\n", " ", row["text"]),
             "youtube_url": _convert_to_link(row["youtube_url"]),
         }
