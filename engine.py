@@ -101,14 +101,20 @@ def format_context_response(context_df):
     Returns:
     - list: A list of dictionaries, each representing a piece of context information.
     """
-    return [
-        {
-            "episode_title": row["sanitized_title"],
-            "relevant_snippet": re.sub("\n", " ", row["text"]),
-            "youtube_url": _convert_to_link(row["youtube_url"]),
-        }
-        for _, row in context_df.iterrows()
-    ]
+    try:
+        return [
+            {
+                "episode_title": row["sanitized_title"],
+                "relevant_snippet": re.sub("\n", " ", row["text"]),
+                "youtube_url": _convert_to_link(row["youtube_url"]),
+            }
+            for _, row in context_df.iterrows()
+        ]
+    except Exception as e:
+        current_app.logger.error(f"Error in format_context_response: {e}")
+        raise ProcessingError(
+            f"Error occurred while formatting context response: {e}", e.__class__.__name__
+        )
 
 
 @backoff.on_exception(backoff.expo, openai.error.RateLimitError, max_tries=6)
