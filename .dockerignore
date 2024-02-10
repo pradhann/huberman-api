@@ -1,0 +1,9 @@
+.git
+node_modules
+*.log
+
+# Ignore transcription files
+data/transcribed/*
+
+# Ignore the scripts
+scripts/*
