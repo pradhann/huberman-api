@@ -138,7 +138,7 @@ def get_openai_response(question, history=""):
             messages=[
                 {
                     "role": "system",
-                    "content": "Only based on the context provided, answer the question below. If you cannot answer, please say 'I don't know.'",
+                    "content": "You are a helpful AI who has listened to all of Huberman Lab's podcasts. Provide a response based on the context provided. Your response should be helpful, informative, prescriptive.",
                 },
                 {"role": "user", "content": prompt},
             ],
