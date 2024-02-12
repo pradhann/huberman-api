@@ -12,6 +12,14 @@ class Config(object):
         "FAISS_INDEX_PATH", "data/processed/faiss_index.index"
     )
 
+    CORS_ALLOWED_ORIGINS = [
+        "https://your-nextjs-app.vercel.app",
+        "https://localhost:3000",
+        "http://localhost:3000",
+        "http://localhost:5000",
+        "http://localhost:8080",
+    ]
+
 
 class DevelopmentConfig(Config):
     """Development configuration."""
