@@ -13,7 +13,7 @@ class Config(object):
     )
 
     CORS_ALLOWED_ORIGINS = [
-        "https://your-nextjs-app.vercel.app",
+        "https://huberman-gpt-gamma.vercel.app",
         "https://localhost:3000",
         "http://localhost:3000",
         "http://localhost:5000",
