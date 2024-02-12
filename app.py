@@ -1,11 +1,11 @@
 from flask import Flask, request, jsonify
 import engine
 from flask_cors import CORS
-from config import CORS_ALLOWED_ORIGINS
+from config import Config
 from errors import RequestValidationError, OpenAIError, ProcessingError
 
 app = Flask(__name__)
-CORS(app, origins=CORS_ALLOWED_ORIGINS)
+CORS(app, origins=Config.CORS_ALLOWED_ORIGINS)
 
 
 def validate_huberman_request(data):
