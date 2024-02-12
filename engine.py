@@ -113,7 +113,8 @@ def format_context_response(context_df):
     except Exception as e:
         current_app.logger.error(f"Error in format_context_response: {e}")
         raise ProcessingError(
-            f"Error occurred while formatting context response: {e}", e.__class__.__name__
+            f"Error occurred while formatting context response: {e}",
+            e.__class__.__name__,
         )
 
 
@@ -131,9 +132,16 @@ def get_openai_response(question, history=""):
     """
     try:
         context_df = get_context_response(question)
-        prompt = f"Previous Conversation: {' '.join(history)}\nQuestion: {question}\nContext:\n{' '.join(context_df['text'])}"
+        prompt = f"Question: {question}\nContext:\n{' '.join(context_df['text'])}"
         completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}]
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Only based on the context provided, answer the question below. If you cannot answer, please say 'I don't know.'",
+                },
+                {"role": "user", "content": prompt},
+            ],
         )
         return completion.choices[0].message.content
     except openai.error.OpenAIError as error:
